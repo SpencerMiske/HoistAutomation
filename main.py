@@ -21,10 +21,12 @@ zirc.setMotor(in1, in2)
 
 io.setup(buttonPin, io.IN,pull_up_down=io.PUD_UP)
 io.setup(ledPin, io.OUT)
+io.output(ledPin, 1)
 
 #Emergency exit button
 def button_callback(channel):
     print('Exit button pressed')
+    io.output(ledPin,0)
     io.cleanup()
     sys.exit(0)    
 io.add_event_detect(buttonPin, io.FALLING, callback=button_callback, bouncetime=200)
@@ -34,9 +36,8 @@ try:
     while True:
         
         command = int(input('Next tank ready: '))
-        if command-1 > zirc.zones: print('tank not in range')
-        else:
-            zirc.moveTo(command-1)
+        if command > zirc.zones: print('tank not in range')
+        else: zirc.moveTo(command-1)
         
 except KeyboardInterrupt:
     print('inturrupted by user')
