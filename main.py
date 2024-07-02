@@ -14,17 +14,25 @@ buttonPin = 11
 ledPin = 13
 buttonState = 0
 
-tankNum = 5
+tankNum = 7
 in1 = 16
 in2 = 18
 sensorPin = 40
 
 moveQueue = []
+endQueue = []
 
 ##GPIO Pin Setup
 zirc = system(tankNum, 2, 30, 3)
 zirc.setMotor(in1, in2)
 zirc.setSensor(sensorPin)
+
+job1 = job(1, [10,10,10,10,10], [1,2,3,4,5], moveQueue, endQueue, zirc)
+job2 = job(2, [10,10,10,10,10], [1,2,3,4,5], moveQueue, endQueue, zirc)
+job3 = job(3, [10,10,10,10,10], [1,2,3,4,5], moveQueue, endQueue, zirc)
+moveQueue.append(job1)
+moveQueue.append(job2)
+moveQueue.append(job3)
 
 io.setup(buttonPin, io.IN,pull_up_down=io.PUD_UP)
 io.setup(ledPin, io.OUT)
@@ -58,16 +66,16 @@ try:
                 i +=1
                 nextUp = moveQueue[i]
             
-            zirc.moveTo(nextUp.tankNums[currentTank])
+            zirc.moveTo(nextUp.tankNums[nextUp.currentTank])
             ##Action to pick up rack
             sleep(5)
             zirc.moveTo(nextUp.next_tank())
             nextUp.currentTank += 1
             ##Drop rack into tank
-            nextUp.start_timer()
+            nextUp.start_timer(nextUp.tankTimes[nextUp.currentTank])
             
             
-        else if zirc.currentZone != zirc.home:
+        elif zirc.currentZone != zirc.home:
             if zirc.currentZone > zirc.home: zirc.move(-1*(zirc.speed))
             else: zirc.move(zirc.speed)
             sleep(0.05)
