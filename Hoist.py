@@ -57,6 +57,8 @@ class system:
         print('moving')
         
         self.move(self.speed*direction)
+        
+        checkHistory = 0
        
         while self.currentZone != endZone:
             sleep(0.01)
