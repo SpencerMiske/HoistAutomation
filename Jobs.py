@@ -16,7 +16,7 @@ class job:
         self.currentTank = 0
         
     def _timer(self, seconds):
-        print('Job ' + str(self.jobID) + ' has been placed in tank ' + str(self.tankNums[self.currentTank]) + ' for ' + str(seconds) + ' seconds.')
+        print('Job ' + str(self.jobID) + ' has been placed in tank ' + str(self.tankNums[self.currentTank - 1]) + ' for ' + str(seconds) + ' seconds.')
         for i in range(seconds, 0, -1):
             sleep(1)
         print('Job ' + str(self.jobID) + ' is finished.')
