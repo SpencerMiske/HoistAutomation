@@ -5,9 +5,9 @@ from Hoist import system
 class job:
     
     #object to represent each job or rack being run through the tank line
-    def __init__(self, ID, tankTimes, tankNums, movingqueue, system):
+    def __init__(self, ID, tankTimes, tankNums, movingqueue, endQueue, system):
         self.tankTimes = tankTimes
-        self. tankNums = tankNums
+        self.tankNums = tankNums
         self.jobID = ID
         self.moveQueue = movingqueue
         self.thread = None
@@ -16,18 +16,23 @@ class job:
         self.currentTank = 0
         
     def _timer(self, seconds):
-        print('Job ' + self.jobID + ' has been placed in tank ' + self.currentTank + ' for ' + self.seconds + ' seconds.')
+        print('Job ' + str(self.jobID) + ' has been placed in tank ' + str(self.tankNums[self.currentTank]) + ' for ' + str(seconds) + ' seconds.')
         for i in range(seconds, 0, -1):
-            time.sleep(1)
-        print('Job ' + self.jobID + ' is finished.')
+            sleep(1)
+        print('Job ' + str(self.jobID) + ' is finished.')
         self.moveQueue.append(self)
         
-    def start_timer(self):
-        self.thread = threading.Thread(target=self._timer)
-        self.thread.join()
+    def start_timer(self, seconds):
+        if seconds != 'END':
+            self.thread = threading.Thread(target=self._timer(seconds))
+            self.thread.start()
+            self.thread.join()
+        else:
+            print(self.jobID + ' is done treatment.')
+            self.endQueue.append(self)
         
     def next_tank(self):
-        return tankNums[currentTank + 1]
+        return self.tankNums[self.currentTank + 1]
 
         
         
