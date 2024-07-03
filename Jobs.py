@@ -24,15 +24,22 @@ class job:
         
     def start_timer(self, seconds):
         if seconds != 'END':
-            self.thread = threading.Thread(target=self._timer(seconds))
+            self.thread = threading.Thread(target=self._timer, args=(seconds,))
             self.thread.start()
-            self.thread.join()
         else:
-            print(self.jobID + ' is done treatment.')
+            print(str(self.jobID) + ' is done treatment.')
             self.endQueue.append(self)
         
     def next_tank(self):
         return self.tankNums[self.currentTank + 1]
+    
+    def cantDo(self):
+        temp = self.currentTank
+        if (system.occupiedTanks[self.tankNums[temp +1]]) == 'X':
+            return True
+        else:
+            return False
+
 
         
         
