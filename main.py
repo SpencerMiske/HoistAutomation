@@ -7,7 +7,6 @@ from Job import job
 
 ##Initilaize Variables
 buttonPin = 11
-ledPin = 13
 buttonState = 0
 tankNum = 4
 in1 = 16
@@ -15,6 +14,7 @@ in2 = 18
 sensorPin = 40
 STARTRACK = 0
 ENDRACK = tankNum-1
+rackUnloaded = 0
 
 moveQueue = []
 endQueue = []
@@ -22,12 +22,10 @@ endQueue = []
 
 ##GPIO Pin Setup
 io.setmode(io.BOARD)
-zirc = system(tankNum, 2, 20, 1)
+zirc = system(tankNum, 2, 40, 1)
 zirc.setMotor(in1, in2)
 zirc.setSensor(sensorPin)
 io.setup(buttonPin, io.IN,pull_up_down=io.PUD_UP)
-io.setup(ledPin, io.OUT)
-io.output(ledPin, 1)
 ################
 
 ##Adding jobs to queue for testing
@@ -37,12 +35,11 @@ moveQueue.append(job1)
 moveQueue.append(job2)
 #################################
 
-#Emergency exit button
+#End rack unloaded button
 def button_callback(channel):
-    print('Exit button pressed')
-    io.output(ledPin,0)
-    io.cleanup()
-    sys.exit(0) 
+    print('Rack has been unloaded')
+    rackUnloaded = 1
+    
 io.add_event_detect(buttonPin, io.FALLING, callback=button_callback, bouncetime=200)
 ######################
 
@@ -51,10 +48,25 @@ try:
     while True:
         print(zirc.occupiedTanks)
         
+        ##Check if you can move finished rack to the start
+        if len(endQueue) != 0 and zirc.occupiedTanks[0] != 'X' and rackUnloaded == 1:
+            rackUnloaded = 0
+            zirc.moveTo(tankNum)
+            
+            ##Action to pick up rack##
+            sleep(3)
+            zirc.occupiedTanks[tankNum] = '0'
+            
+            zirc.moveTo(0)
+            
+            ##Drop rack into tank##
+            sleep(3)
+            zirc.occupiedTanks[tankNum] = 'X'
+            
+        
         ##If there are jobs to move
         if len(moveQueue) != 0:
             i = 0
-            print(moveQueue)
             nextUp = moveQueue[i]
             ##Find a job that is doable
             while nextUp.cantDo():
