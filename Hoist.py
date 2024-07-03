@@ -6,7 +6,8 @@ from time import sleep
 io.cleanup()
 
 class system:
-    visualList = []
+    
+    occupiedTanks = []
     
     def __init__(self, zones, initialZone, hoistSpeed, home):
         self.zones = zones
@@ -15,10 +16,7 @@ class system:
         self.home = home
         
         for i in range(zones):
-            self.visualList.append('0')
-            self.occupiedTanks = self.visualList
-            
-        self.visualList[self.currentZone] = 'X'
+            self.occupiedTanks.append('0')
         
         
     def setMotor(self, in1, in2):
@@ -49,7 +47,6 @@ class system:
 
         
     def moveTo(self, endZone):
-        self.visualList[endZone] = 'I'
         
         if endZone > self.currentZone: direction = 1
         else: direction = -1
@@ -58,17 +55,14 @@ class system:
         
         self.move(self.speed*direction)
         
-        checkHistory = 0
+        checkHistory = io.input(self.sensorPin)
        
         while self.currentZone != endZone:
             sleep(0.01)
             check = io.input(self.sensorPin)
             
             if check == 1 and checkHistory != check:
-                self.visualList[self.currentZone] = '0'
                 self.currentZone += direction
-                self.visualList[self.currentZone] = 'X'
-                print(self.visualList)
             checkHistory = check
                 
         print('stop moving')
