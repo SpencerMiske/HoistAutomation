@@ -8,15 +8,14 @@ from Job import job
 from flask import Flask, request, jsonify
 
 ##Initilaize Variables
-buttonPin = 11
-buttonState = 0
-tankNum = 5
-in1 = 16
-in2 = 18
-sensorPin = 40
+BUTTONPIN = 11
+TANKNUM = 5
+IN1 = 16
+IN2 = 18
+SENSORPIN = 40
 STARTRACK = 0
-ENDRACK = tankNum-1
-rackUnloaded = 0
+ENDRACK = TANKNUM-1
+RACKSPEED = 45
 
 moveQueue = []
 endQueue = []
@@ -24,10 +23,10 @@ endQueue = []
 
 ##GPIO Pin Setup
 io.setmode(io.BOARD)
-zirc = system(tankNum, 1, 45, 1)
-zirc.setMotor(in1, in2)
-zirc.setSensor(sensorPin)
-io.setup(buttonPin, io.IN,pull_up_down=io.PUD_UP)
+zirc = system(TANKNUM, 1, RACKSPEED, 1)
+zirc.setMotor(IN1, IN2)
+zirc.setSensor(SENSORPIN)
+io.setup(BUTTONPIN, io.IN,pull_up_down=io.PUD_UP)
 ################
 
 #End rack unloaded button
@@ -35,7 +34,7 @@ def button_callback(channel):
     print('Rack has been unloaded')
     rackUnloaded = 1
     
-io.add_event_detect(buttonPin, io.FALLING, callback=button_callback, bouncetime=200)
+io.add_event_detect(BUTTONPIN, io.FALLING, callback=button_callback, bouncetime=200)
 
 #Flask server to accept jobs
 app = Flask(__name__)
@@ -106,6 +105,7 @@ try:
                 zirc.occupiedTanks[nextUp.currentTank] = 'X'
                 
                 nextUp.start_timer(nextUp.tankTimes[nextUp.currentTank])
+                
         sleep(0.5)
 #############################################################################
         
