@@ -63,17 +63,17 @@ try:
         ##Check if you can move finished rack to the start
         if len(endQueue) != 0 and zirc.occupiedTanks[0] != 'X':
             rackUnloaded = 0
-            zirc.moveTo(tankNum)
+            zirc.moveTo(ENDRACK)
             
             ##Action to pick up rack##
             sleep(3)
-            zirc.occupiedTanks[tankNum] = '0'
+            zirc.occupiedTanks[ENDRACK] = '0'
             
             zirc.moveTo(0)
             
             ##Drop rack into tank##
             sleep(3)
-            zirc.occupiedTanks[tankNum] = 'X'
+            zirc.occupiedTanks[ENDRACK] = 'X'
             
         
         ##If there are jobs to move
