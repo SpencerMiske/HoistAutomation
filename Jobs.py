@@ -12,6 +12,7 @@ class job:
         self.moveQueue = movingqueue
         self.thread = None
         self.system = system
+        self.endQueue = endQueue
         
         self.currentTank = 0
         
@@ -23,7 +24,7 @@ class job:
         self.moveQueue.append(self)
         
     def start_timer(self, seconds):
-        if seconds != 'END':
+        if seconds != 999:
             self.thread = threading.Thread(target=self._timer, args=(seconds,))
             self.thread.start()
         else:
@@ -39,6 +40,9 @@ class job:
             return True
         else:
             return False
+        
+    #Serialization Methods
+    
 
 
         
