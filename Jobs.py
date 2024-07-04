@@ -24,7 +24,7 @@ class job:
         self.moveQueue.append(self)
         
     def start_timer(self, seconds):
-        if seconds != 999:
+        if seconds != 'END':
             self.thread = threading.Thread(target=self._timer, args=(seconds,))
             self.thread.start()
         else:
