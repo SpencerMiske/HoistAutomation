@@ -5,10 +5,12 @@ import threading
 from Hoist import system
 from Job import job
 
+from flask import Flask, request, jsonify
+
 ##Initilaize Variables
 buttonPin = 11
 buttonState = 0
-tankNum = 4
+tankNum = 5
 in1 = 16
 in2 = 18
 sensorPin = 40
@@ -22,18 +24,11 @@ endQueue = []
 
 ##GPIO Pin Setup
 io.setmode(io.BOARD)
-zirc = system(tankNum, 2, 40, 1)
+zirc = system(tankNum, 1, 45, 1)
 zirc.setMotor(in1, in2)
 zirc.setSensor(sensorPin)
 io.setup(buttonPin, io.IN,pull_up_down=io.PUD_UP)
 ################
-
-##Adding jobs to queue for testing
-job1 = job(1, ['START',10,10,'END'], [STARTRACK,1,2,ENDRACK], moveQueue, endQueue, zirc)
-job2 = job(2, ['START',10,10,'END'], [STARTRACK,1,2,ENDRACK], moveQueue, endQueue, zirc)
-moveQueue.append(job1)
-moveQueue.append(job2)
-#################################
 
 #End rack unloaded button
 def button_callback(channel):
@@ -41,7 +36,25 @@ def button_callback(channel):
     rackUnloaded = 1
     
 io.add_event_detect(buttonPin, io.FALLING, callback=button_callback, bouncetime=200)
-######################
+
+#Flask server to accept jobs
+app = Flask(__name__)
+@app.route('/add_job_list',methods=['POST'])
+def add_job_list():
+    try:
+        job_data = request.json #expecting a list format
+        new_job = job(job_data[0],job_data[1],job_data[2], moveQueue, endQueue, zirc)
+        moveQueue.append(new_job)
+        return jsonify({'status': 'success', 'jobID':new_job.jobID}), 200
+    except:
+        print('could not convert input')
+    
+def run_server():
+    app.run(host='0.0.0.0', port=5000)
+    
+server_thread = threading.Thread(target=run_server)
+server_thread.daemon = True
+server_thread.start()
 
 ##Main loop
 try:
@@ -49,7 +62,7 @@ try:
         print(zirc.occupiedTanks)
         
         ##Check if you can move finished rack to the start
-        if len(endQueue) != 0 and zirc.occupiedTanks[0] != 'X' and rackUnloaded == 1:
+        if len(endQueue) != 0 and zirc.occupiedTanks[0] != 'X':
             rackUnloaded = 0
             zirc.moveTo(tankNum)
             
@@ -101,4 +114,6 @@ except KeyboardInterrupt:
     print('inturrupted by user')
 finally:
     io.cleanup()
+
+
 
