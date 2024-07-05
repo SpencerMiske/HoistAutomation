@@ -15,7 +15,7 @@ IN2 = 18
 SENSORPIN = 40
 STARTRACK = 0
 ENDRACK = TANKNUM-1
-RACKSPEED = 45
+RACKSPEED = 40
 
 moveQueue = []
 endQueue = []
@@ -64,7 +64,7 @@ try:
         if len(endQueue) != 0 and zirc.occupiedTanks[0] != 'X':
             rackUnloaded = 0
             zirc.moveTo(ENDRACK)
-            
+            endQueue.pop(0)
             ##Action to pick up rack##
             sleep(3)
             zirc.occupiedTanks[ENDRACK] = '0'
@@ -73,7 +73,7 @@ try:
             
             ##Drop rack into tank##
             sleep(3)
-            zirc.occupiedTanks[ENDRACK] = 'X'
+            zirc.occupiedTanks[STARTRACK] = 'X'
             
         
         ##If there are jobs to move
@@ -102,7 +102,7 @@ try:
                 
                 ##Drop rack into tank##
                 sleep(3)
-                zirc.occupiedTanks[nextUp.currentTank] = 'X'
+                zirc.occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = 'X'
                 
                 nextUp.start_timer(nextUp.tankTimes[nextUp.currentTank])
                 
