@@ -12,7 +12,7 @@ BUTTONPIN = 11
 TANKNUM = 5
 IN1 = 16
 IN2 = 18
-SENSORPIN = 40
+SENSORPIN = 35
 STARTRACK = 0
 ENDRACK = TANKNUM-1
 RACKSPEED = 40
@@ -94,7 +94,7 @@ try:
                 zirc.moveTo(nextUp.tankNums[nextUp.currentTank])
                 
                 ##Action to pick up rack##
-                zirc.occupiedTanks[nextUp.currentTank] = '0'
+                zirc.occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = '0'
                 sleep(3)
                 
                 zirc.moveTo(nextUp.next_tank())
