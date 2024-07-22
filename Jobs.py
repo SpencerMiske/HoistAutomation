@@ -1,17 +1,16 @@
 import threading
 from time import sleep
-from Hoist import system
 
 class job:
     
     #object to represent each job or rack being run through the tank line
-    def __init__(self, ID, tankTimes, tankNums, movingqueue, endQueue, system):
+    def __init__(self, ID, tankTimes, tankNums, movingqueue, endQueue, occupiedTanks):
         self.tankTimes = tankTimes
         self.tankNums = tankNums
         self.jobID = ID
         self.moveQueue = movingqueue
         self.thread = None
-        self.system = system
+        self.occupiedTanks = occupiedTanks
         self.endQueue = endQueue
         
         self.currentTank = 0
@@ -36,7 +35,7 @@ class job:
     
     def cantDo(self):
         temp = self.currentTank
-        if (system.occupiedTanks[self.tankNums[temp +1]]) == 'X':
+        if (self.occupiedTanks[self.tankNums[temp +1]]) == 'X':
             return True
         else:
             return False
