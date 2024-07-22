@@ -1,3 +1,5 @@
+##TEST CODE FOR COMMUNICATING WITH CLEAR CORE IO
+
 import serial
 import time
 
