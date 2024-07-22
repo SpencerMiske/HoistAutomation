@@ -50,7 +50,7 @@
 #define HANDLE_ALERTS (0)
 
 // Define the velocity and acceleration limits to be used for each move
-int velocityLimit = 1000; // pulses per sec
+int velocityLimit = 500; // pulses per sec
 int accelerationLimit = 100000; // pulses per sec^2
 
 // Declares user-defined helper functions.
@@ -125,18 +125,12 @@ void setup() {
 void loop() {
     // Put your main code here, it will run repeatedly:
     if (ConnectorUsb.AvailableForRead() > 0){
-      int16_t command = ConnectorUsb.CharGet();
 
-      if (command == 'M'){
-        uint8_t positionLow = ConnectorUsb.CharGet();
-        uint8_t positionHigh = ConnectorUsb.CharGet();
-        int position = positionLow | (positionHigh << 8);
+      uint8_t positionLow = ConnectorUsb.CharGet();
+      uint8_t positionHigh = ConnectorUsb.CharGet();
+      int position = positionLow | (positionHigh << 8);
 
-        MoveAbsolutePosition(position);
-      } else if (command == 'E'){
-        ConnectorUsb.PortClose();
-        return;
-      }
+      MoveAbsolutePosition(position);
 
     }
     
@@ -184,6 +178,8 @@ bool MoveAbsolutePosition(int position) {
 			!motor.StatusReg().bit.AlertsPresent) {
         continue;
     }
+    Serial.println("DONE");
+
 	// Check if motor alert occurred during move
 	// Clear alert if configured to do so 
     if (motor.StatusReg().bit.AlertsPresent) {
