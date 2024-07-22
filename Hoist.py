@@ -1,4 +1,5 @@
 ##Hoist Class
+##NOW OBSOLETE WITH CLEARCORE MOTORS
 
 import RPi.GPIO as io
 from time import sleep
