@@ -1,0 +1,25 @@
+import serial
+import time
+
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+
+def send_command(command, param=None):
+    ser.write(command.encode())
+    if param is not None:
+        # Assuming param is an integer that needs to be sent as a 2-byte little-endian value
+        ser.write(param.to_bytes(2, byteorder='little'))
+        print(f"Sent position: {position} param as bytes: {param.to_bytes(2, byteorder='little'}")
+
+# Corrected usage of send_command function
+try:
+    while True:
+        command = input()
+        position = int(input())
+        
+        send_command(command, position)
+        
+        response = ser.readline().decode().strip()
+        print("ClearCore response:", response)
+        
+except KeyboardInterrupt:
+    ser.close()
