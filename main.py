@@ -19,7 +19,7 @@ ENDRACK = TANKNUM-1
 RACKSPEED = 35
 
 ZONENUM = 6
-TANKLOC = [0,1000,2000,3000,4000,5000]
+TANKLOC = [0,5000,10000,15000,20000,25000]
 occupiedTanks = [0,0,0,0,0,0]
 
 moveQueue = []
@@ -85,7 +85,7 @@ try:
             sleep(3)
             occupiedTanks[ENDRACK] = '0'
             
-            moveTo(STARTRACK)
+            move_to(STARTRACK)
             
             ##Drop rack into tank##
             sleep(3)
