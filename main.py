@@ -10,16 +10,14 @@ from flask import Flask, request, jsonify
 ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 ##Initilaize Variables
 BUTTONPIN = 11
-TANKNUM = 5
-IN1 = 16
-IN2 = 18
+TANKNUM = 6
 SENSORPIN = 40
 STARTRACK = 0
 ENDRACK = TANKNUM-1
-RACKSPEED = 35
+BACKUP_DISTANCE = 100
+unloaded = 0
 
-ZONENUM = 6
-TANKLOC = [0,5000,10000,15000,20000,25000]
+TANKLOC = [0,1200,2400,3600,4800,6000]
 occupiedTanks = [0,0,0,0,0,0]
 
 moveQueue = []
@@ -37,17 +35,28 @@ def send_command(ser, number):
     
     ser.write(number_bytes)
     
-def move_to(tankNum):
-    send_command(ser, TANKLOC[tankNum])
+def move_to(tankLoc):
+    send_command(ser, tankLoc)
     response = ser.readline().decode().strip()
     while(response != "DONE"):
         sleep(0.1)
         response = ser.readline().decode().strip()
+        
+def pick_up(tankLoc):
+    move_to(tankLoc - BACKUP_DISTANCE)
+    #Lower hoist
+    move_to(tankLoc)
+    #Rasie Hoist
+    
+def lower(tankLoc):
+    #Lower Hoist
+    move_to(tankLoc - BACKUP_DISTANCE)
+    #Raise
+    
 
 #End rack unloaded button
 def button_callback(channel):
-    print('Rack has been unloaded')
-    rackUnloaded = 1
+    unloaded = 1
     
 io.add_event_detect(BUTTONPIN, io.FALLING, callback=button_callback, bouncetime=200)
 
@@ -77,17 +86,21 @@ server_thread.start()
 try:
     while True:
         ##Check if you can move finished rack to the start
-        if len(endQueue) != 0 and occupiedTanks[0] != 'X':
-            rackUnloaded = 0
-            move_to(ENDRACK)
+        if len(endQueue) != 0 and occupiedTanks[0] != 'X' and unloaded == 1:
+            unloaded = 0
+            move_to(TANKLOC[ENDRACK])
             endQueue.pop(0)
             ##Action to pick up rack##
+            pick_up(ANKLOC[ENDRACK])
+            
             sleep(3)
             occupiedTanks[ENDRACK] = '0'
             
-            move_to(STARTRACK)
+            move_to(TANKLOC[STARTRACK])
             
             ##Drop rack into tank##
+            lower(TANKLOC[STARTRACK])
+            
             sleep(3)
             occupiedTanks[STARTRACK] = 'X'
             
@@ -107,16 +120,20 @@ try:
                 nextUp = moveQueue.pop(i)
                 print('moving job ' + str(nextUp.jobID))
             
-                move_to(nextUp.tankNums[nextUp.currentTank])
+                move_to(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
                 
                 ##Action to pick up rack##
+                pick_up(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
+                
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = '0'
                 sleep(3)
                 
-                move_to(nextUp.next_tank())
+                move_to(TANKLOC[nextUp.next_tank()])
                 nextUp.currentTank += 1
                 
                 ##Drop rack into tank##
+                lower(TANKLOC[nextUp.next_tank()])
+                
                 sleep(3)
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = 'X'
                 
