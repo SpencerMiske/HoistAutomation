@@ -10,9 +10,7 @@ from flask import Flask, request, jsonify
 
 ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 ##Initilaize Variables
-BUTTONPIN = 11
 TANKNUM = 6
-SENSORPIN = 40
 STARTRACK = 0
 ENDRACK = TANKNUM-1
 BACKUP_DISTANCE = 100
@@ -63,32 +61,34 @@ def add_job_list():
 def run_server():
     app.run(host='0.0.0.0', port=5000)
     
-    
-    ser.write(number_bytes)
-    
 server_thread = threading.Thread(target=run_server)
 server_thread.daemon = True
 server_thread.start()
+
+serial_thread = threading.Thread(target=read_from_clearcore)
+serial_thread.daemon = True
+serial_thread.start()
 
 ##Main loop
 try:
     while True:
         ##Check if you can move finished rack to the start
-        if len(endQueue) != 0 and occupiedTanks[0] != 'X' and unloaded == 1:
-            unloaded = 0
-            move_to(TANKLOC[ENDRACK])
-            endQueue.pop(0)
-            ##Action to pick up rack##
-            pick_up(ANKLOC[ENDRACK])
+        with unloaded_lock
+            if len(endQueue) != 0 and occupiedTanks[0] != 'X' and unloaded == 1:
+                unloaded = 0
+                move_to(TANKLOC[ENDRACK])
+                endQueue.pop(0)
+                ##Action to pick up rack##
+                pick_up(ANKLOC[ENDRACK])
             
-            occupiedTanks[ENDRACK] = '0'
+                occupiedTanks[ENDRACK] = '0'
             
-            move_to(TANKLOC[STARTRACK])
+                move_to(TANKLOC[STARTRACK])
             
-            ##Drop rack into tank##
-            lower(TANKLOC[STARTRACK])
+                ##Drop rack into tank##
+                lower(TANKLOC[STARTRACK])
             
-            occupiedTanks[STARTRACK] = 'X'
+                occupiedTanks[STARTRACK] = 'X'
             
         
         ##If there are jobs to move
