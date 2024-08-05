@@ -1,6 +1,9 @@
+import serial
+
 def send_command(ser, number):
     # Assuming param is an integer that needs to be sent as a 2-byte little-endian value
     number_bytes = number.to_bytes(2, byteorder='little')
+    ser.write(number_bytes)
     
 def move_to(tankLoc):
     global response_message
