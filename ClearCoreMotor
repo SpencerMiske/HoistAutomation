@@ -37,6 +37,7 @@
 #define motor ConnectorM0
 #define inputPin DI6
 PinStatus state;
+PinStatus pastState;
 
 // Select the baud rate to match the target serial device
 #define baudRate 9600
@@ -52,8 +53,8 @@ PinStatus state;
 #define HANDLE_ALERTS (0)
 
 // Define the velocity and acceleration limits to be used for each move
-int velocityLimit = 1000; // pulses per sec
-int accelerationLimit = 100000; // pulses per sec^2
+int velocityLimit = 100; // pulses per sec
+int accelerationLimit = 100; // pulses per sec^2
 
 // Declares user-defined helper functions.
 // The definition/implementations of these functions are at the bottom of the sketch.
@@ -130,7 +131,7 @@ void loop() {
     state = digitalRead(inputPin);
     if (state) {
       if (state != pastState) {
-        Serial.println("UNLOAD")
+        Serial.println("UNLOAD");
       }
     }
 
@@ -143,7 +144,7 @@ void loop() {
       MoveAbsolutePosition(position);
 
     }
-    pastState = state
+    pastState = state;
 
 }
 
