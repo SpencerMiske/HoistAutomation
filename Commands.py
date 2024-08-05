@@ -3,11 +3,16 @@ def send_command(ser, number):
     number_bytes = number.to_bytes(2, byteorder='little')
     
 def move_to(tankLoc):
+    global response_message
+    
     send_command(ser, tankLoc)
-    response = ser.readline().decode().strip()
-    while(response != "DONE"):
+    
+    while True:
+        with response_lock:
+            if response_message == 'DONE':
+                response_message = None
+                break
         sleep(0.1)
-        response = ser.readline().decode().strip()
         
 def pick_up(tankLoc):
     move_to(tankLoc - BACKUP_DISTANCE)
