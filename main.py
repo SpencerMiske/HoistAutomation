@@ -16,25 +16,37 @@ SENSORPIN = 40
 STARTRACK = 0
 ENDRACK = TANKNUM-1
 BACKUP_DISTANCE = 100
-unloaded = 0
 
 TANKLOC = [0,1200,2400,3600,4800,6000]
 occupiedTanks = [0,0,0,0,0,0]
+
+latest_message = None
+unloaded = 0
+message_lock = threading.Lock()
+unloaded_lock = threading.Lock()
 
 moveQueue = []
 endQueue = []
 ######################
 
-##GPIO Pin Setup
-io.setmode(io.BOARD)
-io.setup(BUTTONPIN, io.IN,pull_up_down=io.PUD_UP)
-################
+def read_from_clearcore():
+    global latest_message
+    global unloaded
     
-#End rack unloaded button
-def button_callback(channel):
-    unloaded = 1
-    
-io.add_event_detect(BUTTONPIN, io.FALLING, callback=button_callback, bouncetime=200)
+    while True:
+        try:
+            message = ser.readline().decode().strip()
+            if message:
+                with message_lock:
+                    latest_message = message
+                print(f'recieved: {message}')
+                
+                if message == 'UNLOAD':
+                    with unloaded_lock:
+                        unloaded = 1
+                
+        except Exception as e:
+            print(f'Error reading from the Clearcore: {e}')
 
 #Flask server to accept jobs
 app = Flask(__name__)
