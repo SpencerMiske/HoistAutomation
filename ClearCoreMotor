@@ -35,6 +35,8 @@
 // Specifies which motor to move.
 // Options are: ConnectorM0, ConnectorM1, ConnectorM2, or ConnectorM3.
 #define motor ConnectorM0
+#define inputPin DI6
+PinStatus state;
 
 // Select the baud rate to match the target serial device
 #define baudRate 9600
@@ -50,7 +52,7 @@
 #define HANDLE_ALERTS (0)
 
 // Define the velocity and acceleration limits to be used for each move
-int velocityLimit = 500; // pulses per sec
+int velocityLimit = 1000; // pulses per sec
 int accelerationLimit = 100000; // pulses per sec^2
 
 // Declares user-defined helper functions.
@@ -66,6 +68,7 @@ bool MoveAbsolutePosition(int32_t position);
 void setup() {
     // Put your setup code here, it will only run once:
     ConnectorUsb.PortOpen();
+    pinMode(inputPin, INPUT);
 
     // Sets the input clocking rate. This normal rate is ideal for ClearPath
     // step and direction applications.
@@ -124,6 +127,13 @@ void setup() {
 
 void loop() {
     // Put your main code here, it will run repeatedly:
+    state = digitalRead(inputPin);
+    if (state) {
+      if (state != pastState) {
+        Serial.println("UNLOAD")
+      }
+    }
+
     if (ConnectorUsb.AvailableForRead() > 0){
 
       uint8_t positionLow = ConnectorUsb.CharGet();
@@ -133,7 +143,8 @@ void loop() {
       MoveAbsolutePosition(position);
 
     }
-    
+    pastState = state
+
 }
 
 /*------------------------------------------------------------------------------
