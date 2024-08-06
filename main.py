@@ -3,7 +3,7 @@ import sys
 import threading
 from Job import job
 import serial
-from Commands import send_command,move_to,pick_up,lower,add_job_list
+from Commands import send_command,move_to,pick_up,lower
 
 from flask import Flask, request, jsonify
 
@@ -25,7 +25,6 @@ unloaded_lock = threading.Lock()
 moveQueue = []
 endQueue = []
 ######################
-
 def read_from_clearcore():
     global latest_message
     global unloaded
@@ -48,6 +47,16 @@ def read_from_clearcore():
 #Flask server to accept jobs
 app = Flask(__name__)
 @app.route('/add_job_list',methods=['POST'])
+def add_job_list():
+    try:
+        job_data = request.json #expecting a list format
+        new_job = job(job_data[0],job_data[1],job_data[2], moveQueue, endQueue, occupiedTanks)
+        moveQueue.append(new_job)
+        occupiedTanks[STARTRACK] = 'X'
+        return jsonify({'status': 'success', 'jobID':new_job.jobID}), 200
+    except:
+        print('could not convert input')
+
 def run_server():
     app.run(host='0.0.0.0', port=5000)
     
@@ -66,14 +75,14 @@ try:
         with unloaded_lock:
             if len(endQueue) != 0 and occupiedTanks[0] != 'X' and unloaded == 1:
                 unloaded = 0
-                move_to(TANKLOC[ENDRACK])
+                move_to(ser, TANKLOC[ENDRACK])
                 endQueue.pop(0)
                 ##Action to pick up rack##
                 pick_up(ANKLOC[ENDRACK])
             
                 occupiedTanks[ENDRACK] = '0'
             
-                move_to(TANKLOC[STARTRACK])
+                move_to(ser, TANKLOC[STARTRACK])
             
                 ##Drop rack into tank##
                 lower(TANKLOC[STARTRACK])
@@ -96,14 +105,14 @@ try:
                 nextUp = moveQueue.pop(i)
                 print('moving job ' + str(nextUp.jobID))
             
-                move_to(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
+                move_to(ser, TANKLOC[nextUp.tankNums[nextUp.currentTank]])
                 
                 ##Action to pick up rack##
                 pick_up(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
                 
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = '0'
                 
-                move_to(TANKLOC[nextUp.next_tank()])
+                move_to(ser, TANKLOC[nextUp.next_tank()])
                 nextUp.currentTank += 1
                 
                 ##Drop rack into tank##
