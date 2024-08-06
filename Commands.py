@@ -4,18 +4,6 @@ def send_command(ser, number):
     # Assuming param is an integer that needs to be sent as a 2-byte little-endian value
     number_bytes = number.to_bytes(2, byteorder='little')
     ser.write(number_bytes)
-
-def move_to(ser, tankLoc):
-    global response_message
-    
-    send_command(ser, tankLoc)
-    
-    while True:
-        with response_lock:
-            if response_message == 'DONE':
-                response_message = None
-                break
-        sleep(0.1)
         
 def pick_up(tankLoc):
     move_to(tankLoc - BACKUP_DISTANCE)
@@ -30,4 +18,6 @@ def lower(tankLoc):
     sleep(2)
     move_to(tankLoc - BACKUP_DISTANCE)
     #Raise
-    sleep(2)
+    sleep(2)tankTimes
+
+
