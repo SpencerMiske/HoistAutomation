@@ -1,10 +1,9 @@
-import RPi.GPIO as io
 from time import sleep
 import sys
 import threading
 from Job import job
 import serial
-from Commands import send_command,move_to,pick_up,lower
+from Commands import send_command,move_to,pick_up,lower,add_job_list
 
 from flask import Flask, request, jsonify
 
@@ -49,15 +48,6 @@ def read_from_clearcore():
 #Flask server to accept jobs
 app = Flask(__name__)
 @app.route('/add_job_list',methods=['POST'])
-def add_job_list():
-    try:
-        job_data = request.json #expecting a list format
-        new_job = job(job_data[0],job_data[1],job_data[2], moveQueue, endQueue, occupiedTanks)
-        moveQueue.append(new_job)
-        return jsonify({'status': 'success', 'jobID':new_job.jobID}), 200
-    except:
-        print('could not convert input')
-    
 def run_server():
     app.run(host='0.0.0.0', port=5000)
     
@@ -73,7 +63,7 @@ serial_thread.start()
 try:
     while True:
         ##Check if you can move finished rack to the start
-        with unloaded_lock
+        with unloaded_lock:
             if len(endQueue) != 0 and occupiedTanks[0] != 'X' and unloaded == 1:
                 unloaded = 0
                 move_to(TANKLOC[ENDRACK])
@@ -123,7 +113,7 @@ try:
                 
                 nextUp.start_timer(nextUp.tankTimes[nextUp.currentTank])
                 
-        sleep(0.5)
+        sleep(0.1)
 #############################################################################
         
         
