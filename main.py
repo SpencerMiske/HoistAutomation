@@ -3,7 +3,7 @@ import sys
 import threading
 from Job import job
 import serial
-from Commands import send_command,move_to,pick_up,lower
+from Commands import send_command,pick_up,lower
 
 from flask import Flask, request, jsonify
 
@@ -68,6 +68,18 @@ serial_thread = threading.Thread(target=read_from_clearcore)
 serial_thread.daemon = True
 serial_thread.start()
 
+def move_to(ser, tankLoc):
+    global latest_message
+    
+    send_command(ser, tankLoc)
+    
+    while True:
+        with message_lock:
+            if latest_message == 'DONE':
+                latest_message = None
+                break
+        sleep(0.1)
+
 ##Main loop
 try:
     while True:
@@ -117,6 +129,7 @@ try:
                 
                 ##Drop rack into tank##
                 lower(TANKLOC[nextUp.next_tank()])
+                nextUp.start_timer(nextUp.tankTimes[currentTank])
                 
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = 'X'
                 
@@ -129,7 +142,6 @@ try:
 except KeyboardInterrupt:
     print('inturrupted by user')
 finally:
-    io.cleanup()
     ser.close()
 
 
