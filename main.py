@@ -3,18 +3,18 @@ import sys
 import threading
 from Job import job
 import serial
-from Commands import send_command,pick_up,lower
 
 from flask import Flask, request, jsonify
 
 ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+
 ##Initilaize Variables
 TANKNUM = 6
 STARTRACK = 0
 ENDRACK = TANKNUM-1
-BACKUP_DISTANCE = 100
+BACKUP_DISTANCE = 490
 
-TANKLOC = [0,1200,2400,3600,4800,6000]
+TANKLOC = [500,1600,2700,3800,4900,6000]
 occupiedTanks = [0,0,0,0,0,0]
 
 latest_message = None
@@ -24,7 +24,8 @@ unloaded_lock = threading.Lock()
 
 moveQueue = []
 endQueue = []
-######################
+#######################################################################################
+#Defining functions (wanted this in a separate file but the threading was being weird)
 def read_from_clearcore():
     global latest_message
     global unloaded
@@ -52,7 +53,6 @@ def add_job_list():
         job_data = request.json #expecting a list format
         new_job = job(job_data[0],job_data[1],job_data[2], moveQueue, endQueue, occupiedTanks)
         moveQueue.append(new_job)
-        occupiedTanks[STARTRACK] = 'X'
         return jsonify({'status': 'success', 'jobID':new_job.jobID}), 200
     except:
         print('could not convert input')
@@ -68,17 +68,38 @@ serial_thread = threading.Thread(target=read_from_clearcore)
 serial_thread.daemon = True
 serial_thread.start()
 
-def move_to(ser, tankLoc):
+def move_to(ser, tankLoc, speed):
     global latest_message
     
-    send_command(ser, tankLoc)
+    send_command(ser, tankLoc, speed)
     
     while True:
         with message_lock:
-            if latest_message == 'DONE':
+            if latest_message == 'Move Done':
                 latest_message = None
                 break
         sleep(0.1)
+        
+def send_command(ser, number,speed):
+    # Assuming param is an integer that needs to be sent as a 2-byte little-endian value
+    number_bytes = number.to_bytes(2, byteorder='little')
+    ser.write(speed.encode())
+    ser.write(number_bytes)
+        
+def pick_up(tankLoc):
+    #Lower hoist
+    sleep(3)
+    move_to(ser, tankLoc, 'LOW')
+    #Rasie Hoist
+    sleep(3)
+
+def lower(tankLoc):
+    #Lower Hoist
+    sleep(3)
+    move_to(ser, tankLoc - BACKUP_DISTANCE, 'LOW')
+    #Raise
+    sleep(3)
+#######################################################################################
 
 ##Main loop
 try:
@@ -87,17 +108,17 @@ try:
         with unloaded_lock:
             if len(endQueue) != 0 and occupiedTanks[0] != 'X' and unloaded == 1:
                 unloaded = 0
-                move_to(ser, TANKLOC[ENDRACK])
+                move_to(ser, TANKLOC[ENDRACK], 'HIGH')
                 endQueue.pop(0)
                 ##Action to pick up rack##
-                pick_up(ANKLOC[ENDRACK])
+       #         pick_up(ANKLOC[ENDRACK])
             
                 occupiedTanks[ENDRACK] = '0'
             
-                move_to(ser, TANKLOC[STARTRACK])
+                move_to(ser, TANKLOC[STARTRACK], 'LOW')
             
                 ##Drop rack into tank##
-                lower(TANKLOC[STARTRACK])
+        #        lower(TANKLOC[STARTRACK])
             
                 occupiedTanks[STARTRACK] = 'X'
             
@@ -115,21 +136,20 @@ try:
                 
             if i < len(moveQueue):
                 nextUp = moveQueue.pop(i)
-                print('moving job ' + str(nextUp.jobID))
-            
-                move_to(ser, TANKLOC[nextUp.tankNums[nextUp.currentTank]])
-                
+                print('moving job ' + str(nextUp.jobID) + 'to tank: ' + str(TANKLOC[nextUp.tankNums[nextUp.currentTank]]))
+
+                move_to(ser, (TANKLOC[nextUp.tankNums[nextUp.currentTank]]) - BACKUP_DISTANCE, 'HIGH')
+
                 ##Action to pick up rack##
                 pick_up(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
                 
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = '0'
                 
-                move_to(ser, TANKLOC[nextUp.next_tank()])
+                move_to(ser, TANKLOC[nextUp.next_tank()], 'LOW')
                 nextUp.currentTank += 1
                 
                 ##Drop rack into tank##
-                lower(TANKLOC[nextUp.next_tank()])
-                nextUp.start_timer(nextUp.tankTimes[currentTank])
+                lower(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
                 
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = 'X'
                 
