@@ -25,9 +25,6 @@
  * ** ClearPath Manual (DC Power): https://www.teknic.com/files/downloads/clearpath_user_manual.pdf
  * ** ClearPath Manual (AC Power): https://www.teknic.com/files/downloads/ac_clearpath-mc-sd_manual.pdf
  *
- * 
- * Copyright (c) 2020 Teknic Inc. This work is free to use, copy and distribute under the terms of
- * the standard MIT permissive software license which can be found at https://opensource.org/licenses/MIT
  */
 
 #include "ClearCore.h"
@@ -42,32 +39,22 @@ PinStatus pastState;
 // Select the baud rate to match the target serial device
 #define baudRate 9600
 
-// This example has built-in functionality to automatically clear motor alerts, 
-//	including motor shutdowns. Any uncleared alert will cancel and disallow motion.
-// WARNING: enabling automatic alert handling will clear alerts immediately when 
-//	encountered and return a motor to a state in which motion is allowed. Before 
-//	enabling this functionality, be sure to understand this behavior and ensure 
-//	your system will not enter an unsafe state. 
 // To enable automatic alert handling, #define HANDLE_ALERTS (1)
 // To disable automatic alert handling, #define HANDLE_ALERTS (0)
 #define HANDLE_ALERTS (0)
 
 // Define the velocity and acceleration limits to be used for each move
 int velocityLimit = 100; // pulses per sec
-int accelerationLimit = 100; // pulses per sec^2
+int accelerationLimit = 10000; // pulses per sec^2
+int highLimit = 10000;
+int lowLimit = 100;
 
-// Declares user-defined helper functions.
-// The definition/implementations of these functions are at the bottom of the sketch.
 void PrintAlerts();
 void HandleAlerts();
 
-// Declares our user-defined helper function, which is used to command moves to
-// the motor. The definition/implementation of this function is at the  bottom
-// of the example
 bool MoveAbsolutePosition(int32_t position);
 
 void setup() {
-    // Put your setup code here, it will only run once:
     ConnectorUsb.PortOpen();
     pinMode(inputPin, INPUT);
 
@@ -125,9 +112,8 @@ void setup() {
 		Serial.println("Motor Ready");	
 	}
 }
-
+//Main Code Here
 void loop() {
-    // Put your main code here, it will run repeatedly:
     state = digitalRead(inputPin);
     if (state) {
       if (state != pastState) {
@@ -136,6 +122,13 @@ void loop() {
     }
 
     if (ConnectorUsb.AvailableForRead() > 0){
+
+      int16_t speed = ConnectorUsb.CharGet();
+      if (speed == "HIGH"){
+        accelerationLimit = highLimit;
+      } else {
+        accelerationLimit = lowLimit;
+      }
 
       uint8_t positionLow = ConnectorUsb.CharGet();
       uint8_t positionHigh = ConnectorUsb.CharGet();
@@ -190,7 +183,6 @@ bool MoveAbsolutePosition(int position) {
 			!motor.StatusReg().bit.AlertsPresent) {
         continue;
     }
-    Serial.println("DONE");
 
 	// Check if motor alert occurred during move
 	// Clear alert if configured to do so 
