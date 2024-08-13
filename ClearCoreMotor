@@ -33,6 +33,8 @@
 // Options are: ConnectorM0, ConnectorM1, ConnectorM2, or ConnectorM3.
 #define motor ConnectorM0
 #define inputPin DI6
+int movementCol[2];
+int i = 0;
 PinStatus state;
 PinStatus pastState;
 
@@ -44,10 +46,8 @@ PinStatus pastState;
 #define HANDLE_ALERTS (0)
 
 // Define the velocity and acceleration limits to be used for each move
-int velocityLimit = 100; // pulses per sec
-int accelerationLimit = 10000; // pulses per sec^2
-int highLimit = 10000;
-int lowLimit = 100;
+int velocityLimit = 350; // pulses per sec
+int accelerationLimit = 100000; // pulses per sec^2
 
 void PrintAlerts();
 void HandleAlerts();
@@ -112,6 +112,7 @@ void setup() {
 		Serial.println("Motor Ready");	
 	}
 }
+
 //Main Code Here
 void loop() {
     state = digitalRead(inputPin);
@@ -123,18 +124,19 @@ void loop() {
 
     if (ConnectorUsb.AvailableForRead() > 0){
 
-      int16_t speed = ConnectorUsb.CharGet();
-      if (speed == "HIGH"){
-        accelerationLimit = highLimit;
-      } else {
-        accelerationLimit = lowLimit;
-      }
-
       uint8_t positionLow = ConnectorUsb.CharGet();
       uint8_t positionHigh = ConnectorUsb.CharGet();
       int position = positionLow | (positionHigh << 8);
 
-      MoveAbsolutePosition(position);
+      movementCol[i] = position;
+
+      if (i == 1){
+        velocityLimit = movementCol[1];
+        MoveAbsolutePosition(movementCol[0]);
+        i = 0;
+      } else {
+        i += 1;
+      }
 
     }
     pastState = state;
