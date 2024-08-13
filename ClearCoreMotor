@@ -132,6 +132,7 @@ void loop() {
 
       if (i == 1){
         velocityLimit = movementCol[1];
+        motor.VelMax(velocityLimit);
         MoveAbsolutePosition(movementCol[0]);
         i = 0;
       } else {
@@ -175,6 +176,7 @@ bool MoveAbsolutePosition(int position) {
 
     Serial.print("Moving to absolute position: ");
     Serial.println(position);
+    Serial.println(velocityLimit);
 
     // Command the move of absolute distance
     motor.Move(position, MotorDriver::MOVE_TARGET_ABSOLUTE);
