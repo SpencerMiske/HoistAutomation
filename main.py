@@ -69,10 +69,10 @@ serial_thread = threading.Thread(target=read_from_clearcore)
 serial_thread.daemon = True
 serial_thread.start()
 
-def move_to(ser, tankLoc):
+def move_to(ser, tankLoc, speed):
     global latest_message
     
-    send_command(ser, tankLoc)
+    send_command(ser, tankLoc, speed)
     
     while True:
         with message_lock:
@@ -81,22 +81,25 @@ def move_to(ser, tankLoc):
                 break
         sleep(0.1)
         
-def send_command(ser, number):
+def send_command(ser, number, speed):
     # Assuming param is an integer that needs to be sent as a 2-byte little-endian value
     number_bytes = number.to_bytes(2, byteorder='little')
     ser.write(number_bytes)
+    
+    speed_bytes = speed.to_bytes(2, byteorder='little')
+    ser.write(speed_bytes)
         
 def pick_up(tankLoc):
     #Lower hoist
     sleep(3)
-    move_to(ser, tankLoc)
+    move_to(ser, tankLoc, 300)
     #Rasie Hoist
     sleep(3)
 
 def lower(tankLoc):
     #Lower Hoist
     sleep(3)
-    move_to(ser, tankLoc - BACKUP_DISTANCE)
+    move_to(ser, tankLoc - BACKUP_DISTANCE, 300)
     #Raise
     sleep(3)
 #######################################################################################
@@ -106,16 +109,16 @@ try:
     while True:
         ##Check if you can move finished rack to the start
         with unloaded_lock:
-            if len(endQueue) != 0 and occupiedTanks[0] != 'X':
+            if len(endQueue) != 0 and occupiedTanks[0] != 'X' and unloaded == 1:
                 unloaded = 0
-                move_to(ser, TANKLOC[ENDRACK])
+                move_to(ser, TANKLOC[ENDRACK] - BACKUP_DISTANCE, 600)
                 endQueue.pop(0)
                 ##Action to pick up rack##
                 pick_up(TANKLOC[ENDRACK])
             
                 occupiedTanks[ENDRACK] = '0'
             
-                move_to(ser, TANKLOC[STARTRACK])
+                move_to(ser, TANKLOC[STARTRACK], 200)
             
                 ##Drop rack into tank##
                 lower(TANKLOC[STARTRACK])
@@ -137,14 +140,14 @@ try:
                 nextUp = moveQueue.pop(i)
                 print('moving job ' + str(nextUp.jobID) + 'to tank: ' + str(TANKLOC[nextUp.tankNums[nextUp.currentTank]]))
 
-                move_to(ser, (TANKLOC[nextUp.tankNums[nextUp.currentTank]]) - BACKUP_DISTANCE)
+                move_to(ser, (TANKLOC[nextUp.tankNums[nextUp.currentTank]]) - BACKUP_DISTANCE, 600)
 
                 ##Action to pick up rack##
                 pick_up(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
                 
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = '0'
                 
-                move_to(ser, TANKLOC[nextUp.next_tank()])
+                move_to(ser, TANKLOC[nextUp.next_tank()],200)
                 nextUp.currentTank += 1
                 
                 ##Drop rack into tank##
