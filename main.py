@@ -3,16 +3,27 @@ import sys
 import threading
 from Job import job
 import serial
-
+import RPi.GPIO as io
 from flask import Flask, request, jsonify
 
 ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+io.setmode(io.BOARD)
 
 ##Initilaize Variables
 TANKNUM = 6
 STARTRACK = 0
 ENDRACK = TANKNUM-1
 BACKUP_DISTANCE = 490
+HOIST_UP = 0
+HOIST_DOWN = 1
+speed = 300
+
+relayPower = 12
+hoistDir = 16
+io.setup(relayPower, io.OUT)
+io.setup(hoistDir, io.OUT)
+io.output(relayPower,HOIST_DOWN)
+
 
 TANKLOC = [500,1600,2700,3800,4900,6000]
 occupiedTanks = [0,0,0,0,0,0]
@@ -53,6 +64,7 @@ def add_job_list():
         job_data = request.json #expecting a list format
         new_job = job(job_data[0],job_data[1],job_data[2], moveQueue, endQueue, occupiedTanks)
         moveQueue.append(new_job)
+        speed = job_data[3]
         occupiedTanks[STARTRACK] = 'X'
         return jsonify({'status': 'success', 'jobID':new_job.jobID}), 200
     except:
@@ -88,20 +100,17 @@ def send_command(ser, number, speed):
     
     speed_bytes = speed.to_bytes(2, byteorder='little')
     ser.write(speed_bytes)
-        
-def pick_up(tankLoc):
-    #Lower hoist
-    sleep(3)
-    move_to(ser, tankLoc, 300)
-    #Rasie Hoist
-    sleep(3)
-
-def lower(tankLoc):
-    #Lower Hoist
-    sleep(3)
-    move_to(ser, tankLoc - BACKUP_DISTANCE, 300)
-    #Raise
-    sleep(3)
+    
+def hoist_action(tankLoc, direction):
+    io.output(hoistDir, HOIST_DOWN)
+    io.output(relayPower, HOIST_UP)
+    sleep(8)
+    io.output(relayPower, HOIST_DOWN)
+    move_to(ser, (tankLoc - BACKUP_DISTANCE + BACKUP_DISTANCE*direction), 300)
+    io.output(hoistDir, HOIST_UP)
+    io.output(relayPower, HOIST_UP)
+    sleep(8)
+    io.output(relayPower, HOIST_DOWN)
 #######################################################################################
 
 ##Main loop
@@ -114,14 +123,14 @@ try:
                 move_to(ser, TANKLOC[ENDRACK] - BACKUP_DISTANCE, 600)
                 endQueue.pop(0)
                 ##Action to pick up rack##
-                pick_up(TANKLOC[ENDRACK])
+                hoist_action(TANKLOC[ENDRACK], 1)
             
                 occupiedTanks[ENDRACK] = '0'
             
-                move_to(ser, TANKLOC[STARTRACK], 200)
+                move_to(ser, TANKLOC[STARTRACK], speed)
             
                 ##Drop rack into tank##
-                lower(TANKLOC[STARTRACK])
+                hoist_action(TANKLOC[STARTRACK], 0)
                 print(occupiedTanks)
             
         
@@ -142,16 +151,14 @@ try:
 
                 move_to(ser, (TANKLOC[nextUp.tankNums[nextUp.currentTank]]) - BACKUP_DISTANCE, 600)
 
-                ##Action to pick up rack##
-                pick_up(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
+                hoist_action(TANKLOC[nextUp.tankNums[nextUp.currentTank]], 1)
                 
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = '0'
                 
-                move_to(ser, TANKLOC[nextUp.next_tank()],200)
+                move_to(ser, TANKLOC[nextUp.next_tank()], speed)
                 nextUp.currentTank += 1
                 
-                ##Drop rack into tank##
-                lower(TANKLOC[nextUp.tankNums[nextUp.currentTank]])
+                hoist_action(TANKLOC[nextUp.tankNums[nextUp.currentTank]], 0)
                 
                 occupiedTanks[nextUp.tankNums[nextUp.currentTank]] = 'X'
                 print(occupiedTanks)
@@ -159,13 +166,13 @@ try:
                 nextUp.start_timer(nextUp.tankTimes[nextUp.currentTank])
                 
         sleep(0.1)
-#############################################################################
-        
+############################################################################# 
         
 except KeyboardInterrupt:
     print('inturrupted by user')
 finally:
     ser.close()
+    io.cleanup()
 
 
 
